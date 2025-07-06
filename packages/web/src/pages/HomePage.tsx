@@ -1,4 +1,7 @@
-
+import Sidebar from '../components/Sidebar'
+import DirectoryPanel from '../components/DirectoryPanel'
+import ContentArea from '../components/ContentArea'
+import PropertiesPanel from '../components/PropertiesPanel'
 
 interface HomePageProps {
   title: string
@@ -6,8 +9,18 @@ interface HomePageProps {
 
 const HomePage: React.FC<HomePageProps> = ({ title }) => {
   return (
-    <div>
-      HomePage
+    <div className="flex h-screen">
+      {/* Icon Sidebar */}
+      <Sidebar />
+
+      {/* Directory Panel */}
+      <DirectoryPanel />
+
+      {/* Content Area */}
+      <ContentArea />
+
+      {/* Properties Panel */}
+      <PropertiesPanel />
     </div>
   )
 }
