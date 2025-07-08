@@ -1,43 +1,70 @@
-import { FileText, Tags } from "lucide-react"
+import { Plate, usePlateEditor } from "platejs/react";
+import type { Value } from 'platejs';
+import {
+  BoldPlugin,
+  ItalicPlugin,
+  UnderlinePlugin,
+} from '@platejs/basic-nodes/react';
+import { Editor, EditorContainer } from "@/components/ui/editor";
+
+import { FixedToolbar } from '@/components/ui/fixed-toolbar';
+import { MarkToolbarButton } from '@/components/ui/mark-toolbar-button';
+
+const initialValue: Value = [
+  {
+    type: 'p',
+    children: [
+      { text: 'Hello! Try out the ' },
+      { text: 'bold', bold: true },
+      { text: ', ' },
+      { text: 'italic', italic: true },
+      { text: ', and ' },
+      { text: 'underline', underline: true },
+      { text: ' formatting.' },
+    ],
+  },
+];
 
 interface ContentAreaProps {}
 
 const ContentArea: React.FC<ContentAreaProps> = () => {
-    return (
-        <section className="flex-1 bg-white p-6 overflow-y-auto">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-6">Content Area</h1>
-          <div className="prose max-w-none">
-            <h2 className="text-2xl font-semibold mb-4">Welcome to Your Knowledge Base</h2>
-            <p className="text-gray-700 mb-4">
-              This is your personal knowledge management system. Organize your notes, documents, and ideas in a structured way.
-            </p>
-            <div className="bg-blue-50 p-4 rounded-lg mb-4 border-l-4 border-blue-500">
-              <h3 className="text-xl font-medium mb-2 text-blue-900">📝 Quick Start</h3>
-              <p className="text-blue-800">
-                Start by creating your first note or importing existing documents. Use tags and categories to organize your content.
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-                <h4 className="font-medium text-green-900 flex items-center">
-                  <FileText size={16} className="mr-2" />
-                  Create Notes
-                </h4>
-                <p className="text-green-700 text-sm mt-2">Write and organize your thoughts with rich text formatting</p>
-              </div>
-              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
-                <h4 className="font-medium text-purple-900 flex items-center">
-                  <Tags size={16} className="mr-2" />
-                  Tag & Categorize
-                </h4>
-                <p className="text-purple-700 text-sm mt-2">Use tags to connect related ideas and find content easily</p>
-              </div>
-            </div>
-          </div>
+  const editor = usePlateEditor({
+    plugins: [BoldPlugin, ItalicPlugin, UnderlinePlugin], // Add the mark plugins
+    value: initialValue,         // Set initial content
+  });
+
+  return (
+    <section className="flex-1 bg-white p-6 overflow-y-auto scrollbar-hide h-full">
+      <div id="top-toolbar" className="sticky top-0 z-10 my-4">
+        <div id="node-tabs">
+          <button className="px-2 py-1 rounded-md bg-gray-100 hover:bg-gray-200">
+            <span className="text-sm font-medium">Heading</span>
+          </button>
+          <button className="px-2 py-1 rounded-md bg-gray-100 hover:bg-gray-200">
+            <span className="text-sm font-medium">Paragraph</span>
+          </button>
+          <button className="px-2 py-1 rounded-md bg-gray-100 hover:bg-gray-200">
+            <span className="text-sm font-medium">List</span>
+          </button>
+          <button className="px-2 py-1 rounded-md bg-gray-100 hover:bg-gray-200">
+            <span className="text-sm font-medium">Quote</span>
+          </button>
+          <button className="px-2 py-1 rounded-md bg-gray-100 hover:bg-gray-200"></button>
         </div>
-      </section>
-    )
+        <h1 className="text-2xl font-bold">Default title</h1>
+      </div>
+      <Plate editor={editor}>
+        <FixedToolbar className="justify-start rounded-t-lg">
+          <MarkToolbarButton nodeType="bold" tooltip="Bold (⌘+B)">B</MarkToolbarButton>
+          <MarkToolbarButton nodeType="italic" tooltip="Italic (⌘+I)">I</MarkToolbarButton>
+          <MarkToolbarButton nodeType="underline" tooltip="Underline (⌘+U)">U</MarkToolbarButton>
+        </FixedToolbar>
+        <EditorContainer>     
+          <Editor placeholder="Type..." />
+        </EditorContainer>
+      </Plate>
+    </section>
+  )
 }
 
 export default ContentArea
