@@ -1,55 +1,56 @@
 import React, { useState, useCallback } from "react"
 import { Search, Plus, FolderPlus, FileText } from "lucide-react"
-import { useNodeContext } from "./nodes/NodeContext"
-import { NodeItem } from "./nodes/NodeItem"
-import type { NodeTreeItem } from "./nodes/types"
+import { useNodeContext, useNodeOperations, useNodeSearch, NodeItem } from "./nodes"
+import type { NodeTreeItem } from "./nodes"
 
 interface DirectoryPanelProps {}
 
 const DirectoryPanel: React.FC<DirectoryPanelProps> = () => {
-  const { getTree, createNode, updateNode, deleteNode, moveNode, activeNodeId, setActiveNodeId } = useNodeContext()
+  const { activeNodeId } = useNodeContext()
+  const { 
+    handleCreateFolder, 
+    handleCreateNote, 
+    handleRenameNode, 
+    handleDeleteNode, 
+    handleMoveNode, 
+    handleSelectNode 
+  } = useNodeOperations()
+  const { searchQuery, setSearchQuery, filteredNodes, clearSearch } = useNodeSearch()
   const [showCreateMenu, setShowCreateMenu] = useState(false)
-  const [searchQuery, setSearchQuery] = useState("")
-
-  const treeData = getTree()
   
   const handleNodeSelect = useCallback((node: NodeTreeItem) => {
-    setActiveNodeId(node.id)
-  }, [setActiveNodeId])
+    handleSelectNode(node.id)
+  }, [handleSelectNode])
 
   const handleCreateChild = useCallback(async (parentId: string, type: 'folder' | 'note') => {
-    const title = type === 'folder' ? 'New Folder' : 'New Note'
-    await createNode(type, title, parentId)
-  }, [createNode])
+    if (type === 'folder') {
+      await handleCreateFolder(parentId)
+    } else {
+      await handleCreateNote(parentId)
+    }
+  }, [handleCreateFolder, handleCreateNote])
 
   const handleRename = useCallback(async (id: string, newTitle: string) => {
-    await updateNode(id, { title: newTitle })
-  }, [updateNode])
+    await handleRenameNode(id, newTitle)
+  }, [handleRenameNode])
 
   const handleDelete = useCallback(async (id: string) => {
-    await deleteNode(id)
-    if (activeNodeId === id) {
-      setActiveNodeId(undefined)
-    }
-  }, [deleteNode, activeNodeId, setActiveNodeId])
+    await handleDeleteNode(id)
+  }, [handleDeleteNode])
 
   const handleMove = useCallback(async (nodeId: string, newParentId?: string) => {
-    await moveNode(nodeId, newParentId)
-  }, [moveNode])
+    await handleMoveNode(nodeId, newParentId)
+  }, [handleMoveNode])
 
   const handleCreateRootFolder = useCallback(async () => {
-    await createNode('folder', 'New Folder', 'root')
+    await handleCreateFolder('root')
     setShowCreateMenu(false)
-  }, [createNode])
+  }, [handleCreateFolder])
 
   const handleCreateRootNote = useCallback(async () => {
-    await createNode('note', 'New Note', 'root')
+    await handleCreateNote('root')
     setShowCreateMenu(false)
-  }, [createNode])
-
-  const filteredTreeData = treeData.filter(node => 
-    node.title.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  }, [handleCreateNote])
 
   return (
     <section className="w-80 bg-gray-800 border-r border-gray-600 p-2 space-y-2">
@@ -106,7 +107,7 @@ const DirectoryPanel: React.FC<DirectoryPanelProps> = () => {
       
       {/* Tree View */}
       <div className="overflow-y-auto max-h-full">
-        {filteredTreeData.map(node => (
+        {filteredNodes.map(node => (
           <NodeItem
             key={node.id}
             node={node}
@@ -118,9 +119,15 @@ const DirectoryPanel: React.FC<DirectoryPanelProps> = () => {
             isActive={activeNodeId === node.id}
           />
         ))}
-        {filteredTreeData.length === 0 && searchQuery && (
+        {filteredNodes.length === 0 && searchQuery && (
           <div className="text-gray-500 text-sm text-center py-4">
             No nodes found matching "{searchQuery}"
+            <button 
+              onClick={clearSearch}
+              className="block mt-2 text-blue-400 hover:text-blue-300"
+            >
+              Clear search
+            </button>
           </div>
         )}
       </div>

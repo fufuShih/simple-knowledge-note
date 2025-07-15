@@ -4,10 +4,10 @@ import ContentArea from '../components/ContentArea'
 import PropertiesPanel from '../components/PropertiesPanel'
 
 interface HomePageProps {
-  title: string
+  title?: string
 }
 
-const HomePage: React.FC<HomePageProps> = ({ title }) => {
+const HomePage: React.FC<HomePageProps> = () => {
   return (
     <div className="flex h-screen">
       {/* Icon Sidebar */}

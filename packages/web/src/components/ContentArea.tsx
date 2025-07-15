@@ -8,8 +8,8 @@ import {
 import { Editor, EditorContainer } from "@/components/ui/editor";
 import { FixedToolbar } from '@/components/ui/fixed-toolbar';
 import { MarkToolbarButton } from '@/components/ui/mark-toolbar-button';
-import { useNodeContext } from './nodes/NodeContext';
-import type { NoteNodeData, FolderNodeData, NodeData } from './nodes/types';
+import { useNodeContext, useNodeOperations } from './nodes';
+import type { NoteNodeData, FolderNodeData, NodeData } from './nodes';
 import { 
   Folder, 
   FolderOpen, 
@@ -36,7 +36,8 @@ const defaultValue: Value = [
 interface ContentAreaProps {}
 
 const ContentArea: React.FC<ContentAreaProps> = () => {
-  const { activeNodeId, getNode, getChildren, updateNode, createNode, setActiveNodeId } = useNodeContext();
+  const { activeNodeId, getNode, getChildren, updateNode } = useNodeContext();
+  const { handleCreateFolder, handleCreateNote, handleSelectNode } = useNodeOperations();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState<Value>(defaultValue);
   const [isEditing, setIsEditing] = useState(false);
@@ -103,20 +104,18 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
   const handleCreateChild = useCallback(async (type: 'folder' | 'note') => {
     if (!activeNode || !isFolder) return;
     
-    const title = type === 'folder' ? 'New Folder' : 'New Note';
-    const newNodeId = await createNode(type, title, activeNodeId);
-    
-    // If it's a note, select it for editing
-    if (type === 'note') {
-      setActiveNodeId(newNodeId);
+    if (type === 'folder') {
+      await handleCreateFolder(activeNodeId);
+    } else {
+      await handleCreateNote(activeNodeId);
     }
-  }, [activeNode, isFolder, activeNodeId, createNode, setActiveNodeId]);
+  }, [activeNode, isFolder, activeNodeId, handleCreateFolder, handleCreateNote]);
 
   const handleChildClick = useCallback((child: NodeData) => {
-    setActiveNodeId(child.id);
-  }, [setActiveNodeId]);
+    handleSelectNode(child.id);
+  }, [handleSelectNode]);
 
-  const formatDate = (date: Date) => {
+  const formatDateLocal = (date: Date) => {
     return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
@@ -281,11 +280,11 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
                   </span>
                   <span className="flex items-center">
                     <Calendar className="w-4 h-4 mr-1" />
-                    Created: {formatDate(activeNode.createdAt)}
+                    Created: {formatDateLocal(activeNode.createdAt)}
                   </span>
                   <span className="flex items-center">
                     <Clock className="w-4 h-4 mr-1" />
-                    Modified: {formatDate(activeNode.updatedAt)}
+                    Modified: {formatDateLocal(activeNode.updatedAt)}
                   </span>
                 </div>
               </div>
@@ -314,7 +313,7 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
                         <div className="text-xs text-gray-500 space-y-1">
                           <div className="flex items-center justify-center">
                             <Clock className="w-3 h-3 mr-1" />
-                            {formatDate(child.updatedAt)}
+                            {formatDateLocal(child.updatedAt)}
                           </div>
                           {child.type === 'folder' && (
                             <div className="flex items-center justify-center">
@@ -340,7 +339,7 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
                           <div className="text-sm text-gray-500 flex items-center space-x-4">
                             <span className="flex items-center">
                               <Clock className="w-3 h-3 mr-1" />
-                              {formatDate(child.updatedAt)}
+                              {formatDateLocal(child.updatedAt)}
                             </span>
                             {child.type === 'folder' && (
                               <span className="flex items-center">

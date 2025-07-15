@@ -1,20 +1,23 @@
-// Types
-export type {
+// Core exports
+export { NodeProvider, useNodeContext } from './NodeContext';
+export { NodeManager } from './NodeManager';
+export type { 
   BaseNodeData,
-  FolderNodeData,
-  NoteNodeData,
-  NodeData,
-  NodeTreeItem,
-  NodeOperations,
-  NodeContextValue,
-  NodeComponentProps,
+  FolderNodeData, 
+  NoteNodeData, 
+  NodeData, 
+  NodeTreeItem, 
+  NodeOperations, 
+  NodeContextValue, 
+  NodeComponentProps 
 } from './types';
 
-// Node Manager
-export { NodeManager } from './NodeManager';
+// Component exports
+export { NodeItem } from './NodeItem';
 
-// Context
-export { NodeProvider, useNodeContext } from './NodeContext';
+// Hook exports
+export { useNodeOperations } from './hooks/useNodeOperations';
+export { useNodeSearch } from './hooks/useNodeSearch';
 
-// Components
-export { NodeItem } from './NodeItem'; 
+// Utility exports
+export * from './utils/nodeUtils'; 
