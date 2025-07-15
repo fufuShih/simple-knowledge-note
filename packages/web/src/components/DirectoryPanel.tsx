@@ -1,209 +1,128 @@
-import React, { useState } from "react"
-import { BookOpen, FileText, Search, ChevronRight, ChevronDown, Folder, FolderOpen, Calendar, Code, Briefcase, Heart, NotebookPen } from "lucide-react"
-
-interface TreeNode {
-  id: string
-  title: string
-  type: 'folder' | 'note' | 'journal' | 'learning' | 'software' | 'management' | 'life' | 'project'
-  children?: TreeNode[]
-  expanded?: boolean
-}
+import React, { useState, useCallback } from "react"
+import { Search, Plus, FolderPlus, FileText } from "lucide-react"
+import { useNodeContext } from "./nodes/NodeContext"
+import { NodeItem } from "./nodes/NodeItem"
+import type { NodeTreeItem } from "./nodes/types"
 
 interface DirectoryPanelProps {}
 
 const DirectoryPanel: React.FC<DirectoryPanelProps> = () => {
-  const [treeData, setTreeData] = useState<TreeNode[]>([
-    {
-      id: 'root',
-      title: 'root',
-      type: 'folder',
-      expanded: true,
-      children: []
-    },
-    {
-      id: 'journal',
-      title: 'Journal',
-      type: 'journal',
-      expanded: true,
-      children: [
-        {
-          id: 'journal-2025',
-          title: '2025',
-          type: 'folder',
-          expanded: true,
-          children: [
-            {
-              id: 'journal-2025-07',
-              title: '07 - July',
-              type: 'folder',
-              expanded: true,
-              children: [
-                {
-                  id: 'journal-2025-07-07',
-                  title: '07 - Monday',
-                  type: 'note',
-                },
-                {
-                  id: 'journal-2025-07-08',
-                  title: '08 - Tuesday',
-                  type: 'note',
-                }
-              ]
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'learning',
-      title: 'Learning Area',
-      type: 'learning',
-      expanded: false,
-      children: [
-        {
-          id: 'learning-react',
-          title: 'React Learning Notes',
-          type: 'note',
-        },
-        {
-          id: 'learning-typescript',
-          title: 'TypeScript Advanced',
-          type: 'note',
-        }
-      ]
-    },
-    {
-      id: 'software',
-      title: 'Software Area',
-      type: 'software',
-      expanded: false,
-      children: [
-        {
-          id: 'software-projects',
-          title: 'Project Management',
-          type: 'folder',
-          children: [
-            {
-              id: 'software-projects-current',
-              title: 'Current Projects',
-              type: 'note',
-            }
-          ]
-        }
-      ]
-    },
-    {
-      id: 'management',
-      title: 'Management Area',
-      type: 'management',
-      expanded: false,
-      children: []
-    },
-    {
-      id: 'life',
-      title: 'Life Area',
-      type: 'life',
-      expanded: true,
-      children: []
-    },
-    {
-      id: 'simple-knowledge',
-      title: 'Simple Knowledge',
-      type: 'project',
-      expanded: true,
-      children: [
-        {
-          id: 'simple-knowledge-requirements',
-          title: 'Project Requirements',
-          type: 'note',
-        }
-      ]
+  const { getTree, createNode, updateNode, deleteNode, moveNode, activeNodeId, setActiveNodeId } = useNodeContext()
+  const [showCreateMenu, setShowCreateMenu] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
+
+  const treeData = getTree()
+  
+  const handleNodeSelect = useCallback((node: NodeTreeItem) => {
+    setActiveNodeId(node.id)
+  }, [setActiveNodeId])
+
+  const handleCreateChild = useCallback(async (parentId: string, type: 'folder' | 'note') => {
+    const title = type === 'folder' ? 'New Folder' : 'New Note'
+    await createNode(type, title, parentId)
+  }, [createNode])
+
+  const handleRename = useCallback(async (id: string, newTitle: string) => {
+    await updateNode(id, { title: newTitle })
+  }, [updateNode])
+
+  const handleDelete = useCallback(async (id: string) => {
+    await deleteNode(id)
+    if (activeNodeId === id) {
+      setActiveNodeId(undefined)
     }
-  ])
+  }, [deleteNode, activeNodeId, setActiveNodeId])
 
-  const getNodeIcon = (type: TreeNode['type'], expanded?: boolean) => {
-    switch (type) {
-      case 'folder':
-        return expanded ? <FolderOpen size={16} /> : <Folder size={16} />
-      case 'note':
-        return <FileText size={16} />
-      case 'journal':
-        return <Calendar size={16} />
-      case 'learning':
-        return <BookOpen size={16} />
-      case 'software':
-        return <Code size={16} />
-      case 'management':
-        return <Briefcase size={16} />
-      case 'life':
-        return <Heart size={16} />
-      case 'project':
-        return <NotebookPen size={16} />
-      default:
-        return <FileText size={16} />
-    }
-  }
+  const handleMove = useCallback(async (nodeId: string, newParentId?: string) => {
+    await moveNode(nodeId, newParentId)
+  }, [moveNode])
 
-  const toggleNode = (nodeId: string) => {
-    const updateNode = (nodes: TreeNode[]): TreeNode[] => {
-      return nodes.map(node => {
-        if (node.id === nodeId) {
-          return { ...node, expanded: !node.expanded }
-        }
-        if (node.children) {
-          return { ...node, children: updateNode(node.children) }
-        }
-        return node
-      })
-    }
-    setTreeData(updateNode(treeData))
-  }
+  const handleCreateRootFolder = useCallback(async () => {
+    await createNode('folder', 'New Folder', 'root')
+    setShowCreateMenu(false)
+  }, [createNode])
 
-  const renderTreeNode = (node: TreeNode, level: number = 0) => {
-    const hasChildren = node.children && node.children.length > 0
-    const paddingLeft = level * 20 + 8
+  const handleCreateRootNote = useCallback(async () => {
+    await createNode('note', 'New Note', 'root')
+    setShowCreateMenu(false)
+  }, [createNode])
 
-    return (
-      <div key={node.id} className="select-none">
-        <div
-          className="flex items-center py-1 px-2 hover:bg-gray-700 cursor-pointer text-gray-300 text-sm"
-          style={{ paddingLeft: `${paddingLeft}px` }}
-          onClick={() => hasChildren && toggleNode(node.id)}
-        >
-          {hasChildren && (
-            <span className="mr-1 flex-shrink-0">
-              {node.expanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-            </span>
-          )}
-          {!hasChildren && <span className="mr-1 w-3" />}
-          
-          <span className="mr-2 flex-shrink-0 text-gray-400">
-            {getNodeIcon(node.type, node.expanded)}
-          </span>
-          
-          <span className="truncate">{node.title}</span>
-        </div>
-        
-        {hasChildren && node.expanded && (
-          <div>
-            {node.children!.map(child => renderTreeNode(child, level + 1))}
-          </div>
-        )}
-      </div>
-    )
-  }
+  const filteredTreeData = treeData.filter(node => 
+    node.title.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   return (
     <section className="w-80 bg-gray-800 border-r border-gray-600 p-2 space-y-2">
+      {/* Header */}
       <div className="flex items-center justify-between mb-4 px-2">
-        <h2 className="text-lg font-semibold text-white">Quick Search</h2>
-        <button className="p-1 hover:bg-gray-700 rounded text-gray-400">
-          <Search size={16} />
-        </button>
+        <h2 className="text-lg font-semibold text-white">Knowledge Base</h2>
+        <div className="flex items-center space-x-1">
+          <button 
+            className="p-1 hover:bg-gray-700 rounded text-gray-400"
+            title="Search"
+          >
+            <Search size={16} />
+          </button>
+          <div className="relative">
+            <button 
+              className="p-1 hover:bg-gray-700 rounded text-gray-400"
+              onClick={() => setShowCreateMenu(!showCreateMenu)}
+              title="Add new"
+            >
+              <Plus size={16} />
+            </button>
+            {showCreateMenu && (
+              <div className="absolute right-0 top-8 bg-gray-800 border border-gray-600 rounded shadow-lg py-1 z-50 min-w-[140px]">
+                <button
+                  onClick={handleCreateRootFolder}
+                  className="w-full px-3 py-1 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center"
+                >
+                  <FolderPlus size={14} className="mr-2" />
+                  New Folder
+                </button>
+                <button
+                  onClick={handleCreateRootNote}
+                  className="w-full px-3 py-1 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center"
+                >
+                  <FileText size={14} className="mr-2" />
+                  New Note
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Search Input */}
+      <div className="px-2">
+        <input
+          type="text"
+          placeholder="Search..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full bg-gray-700 text-white px-3 py-1 rounded text-sm outline-none border border-gray-600 focus:border-blue-500"
+        />
       </div>
       
+      {/* Tree View */}
       <div className="overflow-y-auto max-h-full">
-        {treeData.map(node => renderTreeNode(node))}
+        {filteredTreeData.map(node => (
+          <NodeItem
+            key={node.id}
+            node={node}
+            onSelect={handleNodeSelect}
+            onCreateChild={handleCreateChild}
+            onDelete={handleDelete}
+            onRename={handleRename}
+            onMove={handleMove}
+            isActive={activeNodeId === node.id}
+          />
+        ))}
+        {filteredTreeData.length === 0 && searchQuery && (
+          <div className="text-gray-500 text-sm text-center py-4">
+            No nodes found matching "{searchQuery}"
+          </div>
+        )}
       </div>
     </section>
   )

@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router'
 import HomePage from './pages/HomePage'
+import { NodeProvider } from './components/nodes'
 
 const router = createBrowserRouter([
   {
@@ -10,7 +11,9 @@ const router = createBrowserRouter([
 
 function App() {
   return (
-    <RouterProvider router={router} />
+    <NodeProvider>
+      <RouterProvider router={router} />
+    </NodeProvider>
   )
 }
 

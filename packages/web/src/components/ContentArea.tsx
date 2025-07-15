@@ -8,21 +8,16 @@ import {
 import { Editor, EditorContainer } from "@/components/ui/editor";
 import { FixedToolbar } from '@/components/ui/fixed-toolbar';
 import { MarkToolbarButton } from '@/components/ui/mark-toolbar-button';
+import { useNodeContext } from './nodes/NodeContext';
+import type { NoteNodeData } from './nodes/types';
 
+import { useState, useEffect, useCallback } from 'react';
 
-import { useState } from 'react';
-
-const initialValue: Value = [
+const defaultValue: Value = [
   {
     type: 'p',
     children: [
-      { text: 'Hello! Try out the ' },
-      { text: 'bold', bold: true },
-      { text: ', ' },
-      { text: 'italic', italic: true },
-      { text: ', and ' },
-      { text: 'underline', underline: true },
-      { text: ' formatting.' },
+      { text: 'Select a note from the directory panel to start editing...' },
     ],
   },
 ];
@@ -30,71 +25,156 @@ const initialValue: Value = [
 interface ContentAreaProps {}
 
 const ContentArea: React.FC<ContentAreaProps> = () => {
-  const [title, setTitle] = useState('Untitled Document');
-  const [activeTab, setActiveTab] = useState('note1');
-  
+  const { activeNodeId, getNode, updateNode } = useNodeContext();
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState<Value>(defaultValue);
+  const [isEditing, setIsEditing] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+
+  const activeNode = activeNodeId ? getNode(activeNodeId) : null;
+  const isNote = activeNode?.type === 'note';
+
   const editor = usePlateEditor({
-    plugins: [BoldPlugin, ItalicPlugin, UnderlinePlugin], // Add the mark plugins
-    value: initialValue,         // Set initial content
+    plugins: [BoldPlugin, ItalicPlugin, UnderlinePlugin],
+    value: content,
   });
 
-  const noteTabs = [
-    { id: 'note1', label: 'Getting Started' },
-    { id: 'note2', label: 'Meeting Notes' },
-    { id: 'note3', label: 'Ideas' },
-  ];
+  // Load node content when active node changes
+  useEffect(() => {
+    if (activeNode && isNote) {
+      const noteNode = activeNode as NoteNodeData;
+      setTitle(noteNode.title);
+      setContent(noteNode.content || defaultValue);
+      setIsEditing(false);
+    } else if (activeNode && activeNode.type === 'folder') {
+      setTitle(activeNode.title);
+      setContent([
+        {
+          type: 'p',
+          children: [
+            { text: 'This is a folder. You can create notes and subfolders inside it.' },
+          ],
+        },
+      ]);
+      setIsEditing(false);
+    } else {
+      setTitle('');
+      setContent(defaultValue);
+      setIsEditing(false);
+    }
+  }, [activeNode, isNote]);
+
+  const handleSave = useCallback(async () => {
+    if (!activeNode || !isNote || !isEditing) return;
+
+    try {
+      await updateNode(activeNodeId!, {
+        title,
+        content,
+      });
+      setIsEditing(false);
+      setLastSaved(new Date());
+    } catch (error) {
+      console.error('Failed to save node:', error);
+    }
+  }, [activeNode, isNote, isEditing, activeNodeId, title, content, updateNode]);
+
+  const handleTitleChange = useCallback((newTitle: string) => {
+    setTitle(newTitle);
+    setIsEditing(true);
+  }, []);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.ctrlKey && e.key === 's') {
+      e.preventDefault();
+      handleSave();
+    }
+  }, [handleSave]);
+
+  useEffect(() => {
+    const handleKeyDownGlobal = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDownGlobal);
+    return () => document.removeEventListener('keydown', handleKeyDownGlobal);
+  }, [handleSave]);
+
+  if (!activeNode) {
+    return (
+      <section className="flex-1 bg-white h-full flex flex-col items-center justify-center px-2 py-4">
+        <div className="text-center text-gray-500">
+          <h2 className="text-2xl font-semibold mb-2">Welcome to your Knowledge Base</h2>
+          <p className="text-lg">Select a note from the directory panel to start editing</p>
+          <p className="text-sm mt-2">Or create a new note or folder using the + button</p>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="flex-1 bg-white h-full flex flex-col px-2 py-4">
-      {/* Note Tabs Area - positioned directly under title */}
-      <div className="border-b border-gray-200 bg-gray-50">
-        <div className="flex">
-          {noteTabs.map((tab) => (
+      {/* Header with title and save status */}
+      <div className="border-b border-gray-200 p-4 flex items-center justify-between">
+        <div className="flex-1">
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => handleTitleChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            className="w-full text-2xl font-bold bg-transparent border-none outline-none focus:ring-0 p-0"
+            placeholder="Enter document title..."
+            disabled={!isNote}
+          />
+        </div>
+        <div className="flex items-center space-x-2">
+          {isEditing && (
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-4 py-2 text-sm font-medium border-r border-gray-200 relative transition-colors ${
-                activeTab === tab.id
-                  ? 'bg-white text-gray-900 border-b-2 border-b-blue-500'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-              }`}
+              onClick={handleSave}
+              className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
             >
-              {tab.label}
-              {activeTab === tab.id && (
-                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"></div>
-              )}
+              Save
             </button>
-          ))}
-          <button className="px-3 py-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100">
-            <span className="text-lg">+</span>
-          </button>
+          )}
+          {lastSaved && (
+            <span className="text-sm text-gray-500">
+              Saved at {lastSaved.toLocaleTimeString()}
+            </span>
+          )}
+          {isEditing && (
+            <span className="text-sm text-orange-500">
+              Unsaved changes
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Edit Title Area */}
-      <div className="border-b border-gray-200 p-4">
-        <input
-          type="text"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          className="w-full text-2xl font-bold bg-transparent border-none outline-none focus:ring-0 p-0"
-          placeholder="Enter document title..."
-        />
-      </div>
-
-      {/* Plate Area */}
-      <div className="flex-1 overflow-hidden">
-        <Plate editor={editor}>
-          <FixedToolbar className="justify-start rounded-t-lg">
-            <MarkToolbarButton nodeType="bold" tooltip="Bold (⌘+B)">B</MarkToolbarButton>
-            <MarkToolbarButton nodeType="italic" tooltip="Italic (⌘+I)">I</MarkToolbarButton>
-            <MarkToolbarButton nodeType="underline" tooltip="Underline (⌘+U)">U</MarkToolbarButton>
-          </FixedToolbar>
-          <EditorContainer>     
-            <Editor placeholder="Type..." />
-          </EditorContainer>
-        </Plate>
-      </div>
+      {isNote ? (
+        /* Editor Area */
+        <div className="flex-1 overflow-hidden">
+          <Plate editor={editor}>
+            <FixedToolbar className="justify-start rounded-t-lg">
+              <MarkToolbarButton nodeType="bold" tooltip="Bold (⌘+B)">B</MarkToolbarButton>
+              <MarkToolbarButton nodeType="italic" tooltip="Italic (⌘+I)">I</MarkToolbarButton>
+              <MarkToolbarButton nodeType="underline" tooltip="Underline (⌘+U)">U</MarkToolbarButton>
+            </FixedToolbar>
+            <EditorContainer>     
+              <Editor placeholder="Start typing..." />
+            </EditorContainer>
+          </Plate>
+        </div>
+      ) : (
+        /* Folder view */
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center text-gray-500">
+            <h3 className="text-xl font-semibold mb-2">📁 {title}</h3>
+            <p>This is a folder. Use the directory panel to create notes and subfolders.</p>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
