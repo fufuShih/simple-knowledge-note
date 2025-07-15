@@ -9,7 +9,18 @@ import { Editor, EditorContainer } from "@/components/ui/editor";
 import { FixedToolbar } from '@/components/ui/fixed-toolbar';
 import { MarkToolbarButton } from '@/components/ui/mark-toolbar-button';
 import { useNodeContext } from './nodes/NodeContext';
-import type { NoteNodeData } from './nodes/types';
+import type { NoteNodeData, FolderNodeData, NodeData } from './nodes/types';
+import { 
+  Folder, 
+  FolderOpen, 
+  FileText, 
+  Calendar, 
+  Clock, 
+  Hash,
+  Plus,
+  Grid3X3,
+  List
+} from 'lucide-react';
 
 import { useState, useEffect, useCallback } from 'react';
 
@@ -25,19 +36,24 @@ const defaultValue: Value = [
 interface ContentAreaProps {}
 
 const ContentArea: React.FC<ContentAreaProps> = () => {
-  const { activeNodeId, getNode, updateNode } = useNodeContext();
+  const { activeNodeId, getNode, getChildren, updateNode, createNode, setActiveNodeId } = useNodeContext();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState<Value>(defaultValue);
   const [isEditing, setIsEditing] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const activeNode = activeNodeId ? getNode(activeNodeId) : null;
   const isNote = activeNode?.type === 'note';
+  const isFolder = activeNode?.type === 'folder';
 
   const editor = usePlateEditor({
     plugins: [BoldPlugin, ItalicPlugin, UnderlinePlugin],
     value: content,
   });
+
+  // Get children for folder view
+  const children = isFolder ? getChildren(activeNodeId) : [];
 
   // Load node content when active node changes
   useEffect(() => {
@@ -48,14 +64,7 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
       setIsEditing(false);
     } else if (activeNode && activeNode.type === 'folder') {
       setTitle(activeNode.title);
-      setContent([
-        {
-          type: 'p',
-          children: [
-            { text: 'This is a folder. You can create notes and subfolders inside it.' },
-          ],
-        },
-      ]);
+      setContent(defaultValue);
       setIsEditing(false);
     } else {
       setTitle('');
@@ -91,6 +100,34 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
     }
   }, [handleSave]);
 
+  const handleCreateChild = useCallback(async (type: 'folder' | 'note') => {
+    if (!activeNode || !isFolder) return;
+    
+    const title = type === 'folder' ? 'New Folder' : 'New Note';
+    const newNodeId = await createNode(type, title, activeNodeId);
+    
+    // If it's a note, select it for editing
+    if (type === 'note') {
+      setActiveNodeId(newNodeId);
+    }
+  }, [activeNode, isFolder, activeNodeId, createNode, setActiveNodeId]);
+
+  const handleChildClick = useCallback((child: NodeData) => {
+    setActiveNodeId(child.id);
+  }, [setActiveNodeId]);
+
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const getNodeIcon = (node: NodeData) => {
+    return node.type === 'folder' ? (
+      <Folder className="w-8 h-8 text-blue-500" />
+    ) : (
+      <FileText className="w-8 h-8 text-green-500" />
+    );
+  };
+
   useEffect(() => {
     const handleKeyDownGlobal = (e: KeyboardEvent) => {
       if (e.ctrlKey && e.key === 's') {
@@ -116,8 +153,8 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
   }
 
   return (
-    <section className="flex-1 bg-white h-full flex flex-col px-2 py-4">
-      {/* Header with title and save status */}
+    <section className="flex-1 bg-white h-full flex flex-col">
+      {/* Header with title and controls */}
       <div className="border-b border-gray-200 p-4 flex items-center justify-between">
         <div className="flex-1">
           <input
@@ -131,23 +168,61 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
           />
         </div>
         <div className="flex items-center space-x-2">
-          {isEditing && (
-            <button
-              onClick={handleSave}
-              className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
-            >
-              Save
-            </button>
+          {isFolder && (
+            <>
+              <div className="flex items-center space-x-1 mr-4">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-2 rounded ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
+                  title="Grid view"
+                >
+                  <Grid3X3 size={16} />
+                </button>
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`p-2 rounded ${viewMode === 'list' ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
+                  title="List view"
+                >
+                  <List size={16} />
+                </button>
+              </div>
+              <button
+                onClick={() => handleCreateChild('folder')}
+                className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 flex items-center"
+              >
+                <Plus size={14} className="mr-1" />
+                Folder
+              </button>
+              <button
+                onClick={() => handleCreateChild('note')}
+                className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600 flex items-center"
+              >
+                <Plus size={14} className="mr-1" />
+                Note
+              </button>
+            </>
           )}
-          {lastSaved && (
-            <span className="text-sm text-gray-500">
-              Saved at {lastSaved.toLocaleTimeString()}
-            </span>
-          )}
-          {isEditing && (
-            <span className="text-sm text-orange-500">
-              Unsaved changes
-            </span>
+          {isNote && (
+            <>
+              {isEditing && (
+                <button
+                  onClick={handleSave}
+                  className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+                >
+                  Save
+                </button>
+              )}
+              {lastSaved && (
+                <span className="text-sm text-gray-500">
+                  Saved at {lastSaved.toLocaleTimeString()}
+                </span>
+              )}
+              {isEditing && (
+                <span className="text-sm text-orange-500">
+                  Unsaved changes
+                </span>
+              )}
+            </>
           )}
         </div>
       </div>
@@ -168,11 +243,126 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
         </div>
       ) : (
         /* Folder view */
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center text-gray-500">
-            <h3 className="text-xl font-semibold mb-2">📁 {title}</h3>
-            <p>This is a folder. Use the directory panel to create notes and subfolders.</p>
-          </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          {children.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-500">
+              <FolderOpen className="w-16 h-16 mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Empty Folder</h3>
+              <p className="text-center mb-4">This folder doesn't contain any items yet.</p>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => handleCreateChild('folder')}
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center"
+                >
+                  <Plus size={16} className="mr-2" />
+                  Add Folder
+                </button>
+                <button
+                  onClick={() => handleCreateChild('note')}
+                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 flex items-center"
+                >
+                  <Plus size={16} className="mr-2" />
+                  Add Note
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Folder info */}
+              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center mb-2">
+                  <FolderOpen className="w-6 h-6 text-blue-500 mr-2" />
+                  <h3 className="text-lg font-semibold">{title}</h3>
+                </div>
+                <div className="flex items-center text-sm text-gray-600 space-x-4">
+                  <span className="flex items-center">
+                    <Hash className="w-4 h-4 mr-1" />
+                    {children.length} items
+                  </span>
+                  <span className="flex items-center">
+                    <Calendar className="w-4 h-4 mr-1" />
+                    Created: {formatDate(activeNode.createdAt)}
+                  </span>
+                  <span className="flex items-center">
+                    <Clock className="w-4 h-4 mr-1" />
+                    Modified: {formatDate(activeNode.updatedAt)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Children grid/list */}
+              <div className={
+                viewMode === 'grid' 
+                  ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'
+                  : 'space-y-2'
+              }>
+                {children.map((child) => (
+                  <div
+                    key={child.id}
+                    onClick={() => handleChildClick(child)}
+                    className={`
+                      cursor-pointer border rounded-lg p-4 transition-all duration-200 hover:shadow-md hover:border-blue-300
+                      ${viewMode === 'grid' ? 'text-center' : 'flex items-center space-x-3'}
+                    `}
+                  >
+                    {viewMode === 'grid' ? (
+                      <>
+                        <div className="mb-3 flex justify-center">
+                          {getNodeIcon(child)}
+                        </div>
+                        <h4 className="font-medium text-gray-900 mb-2 truncate">{child.title}</h4>
+                        <div className="text-xs text-gray-500 space-y-1">
+                          <div className="flex items-center justify-center">
+                            <Clock className="w-3 h-3 mr-1" />
+                            {formatDate(child.updatedAt)}
+                          </div>
+                          {child.type === 'folder' && (
+                            <div className="flex items-center justify-center">
+                              <Hash className="w-3 h-3 mr-1" />
+                              {(child as FolderNodeData).children.length} items
+                            </div>
+                          )}
+                          {child.type === 'note' && (
+                            <div className="flex items-center justify-center">
+                              <FileText className="w-3 h-3 mr-1" />
+                              Note
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex-shrink-0">
+                          {getNodeIcon(child)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-gray-900 truncate">{child.title}</h4>
+                          <div className="text-sm text-gray-500 flex items-center space-x-4">
+                            <span className="flex items-center">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {formatDate(child.updatedAt)}
+                            </span>
+                            {child.type === 'folder' && (
+                              <span className="flex items-center">
+                                <Hash className="w-3 h-3 mr-1" />
+                                {(child as FolderNodeData).children.length} items
+                              </span>
+                            )}
+                            {child.type === 'note' && (
+                              <span className="flex items-center">
+                                <FileText className="w-3 h-3 mr-1" />
+                                Note
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
     </section>
