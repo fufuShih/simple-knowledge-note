@@ -137,4 +137,8 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  .debug {
+    @apply border-1 border-red-500;
+  }
 }
