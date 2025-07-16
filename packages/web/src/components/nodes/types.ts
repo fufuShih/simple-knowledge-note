@@ -1,7 +1,7 @@
 export interface BaseNodeData {
   id: string;
   title: string;
-  type: 'folder' | 'note';
+  type: 'folder' | 'note' | 'webNote';
   parentId?: string;
   createdAt: Date;
   updatedAt: Date;
@@ -21,12 +21,21 @@ export interface NoteNodeData extends BaseNodeData {
   summary?: string;
 }
 
-export type NodeData = FolderNodeData | NoteNodeData;
+export interface WebNoteNodeData extends BaseNodeData {
+  type: 'webNote';
+  url: string;
+  notes: any; // Plate editor content for notes
+  showNotes: boolean;
+  tags: string[];
+  summary?: string;
+}
+
+export type NodeData = FolderNodeData | NoteNodeData | WebNoteNodeData;
 
 export interface NodeTreeItem {
   id: string;
   title: string;
-  type: 'folder' | 'note';
+  type: 'folder' | 'note' | 'webNote';
   children?: NodeTreeItem[];
   expanded?: boolean;
   parentId?: string;
@@ -34,7 +43,7 @@ export interface NodeTreeItem {
 }
 
 export interface NodeOperations {
-  createNode: (type: 'folder' | 'note', title: string, parentId?: string) => Promise<string>;
+  createNode: (type: 'folder' | 'note' | 'webNote', title: string, parentId?: string, additionalData?: any) => Promise<string>;
   updateNode: (id: string, updates: Partial<NodeData>) => Promise<void>;
   deleteNode: (id: string) => Promise<void>;
   moveNode: (nodeId: string, newParentId?: string) => Promise<void>;
@@ -54,7 +63,7 @@ export interface NodeContextValue extends NodeOperations {
 export interface NodeComponentProps {
   node: NodeTreeItem;
   onSelect: (node: NodeTreeItem) => void;
-  onCreateChild: (parentId: string, type: 'folder' | 'note') => void;
+  onCreateChild: (parentId: string, type: 'folder' | 'note' | 'webNote') => void;
   onDelete: (id: string) => void;
   onRename: (id: string, newTitle: string) => void;
   onMove: (nodeId: string, newParentId?: string) => void;

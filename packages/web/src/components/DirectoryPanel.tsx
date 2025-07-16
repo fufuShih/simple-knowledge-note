@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react"
-import { Search, Plus, FolderPlus, FileText } from "lucide-react"
+import { Search, Plus, FolderPlus, FileText, Globe } from "lucide-react"
 import { useNodeContext, useNodeOperations, useNodeSearch, NodeItem } from "./nodes"
 import type { NodeTreeItem } from "./nodes"
 
@@ -10,6 +10,7 @@ const DirectoryPanel: React.FC<DirectoryPanelProps> = () => {
   const { 
     handleCreateFolder, 
     handleCreateNote, 
+    handleCreateWebNote,
     handleRenameNode, 
     handleDeleteNode, 
     handleMoveNode, 
@@ -22,13 +23,15 @@ const DirectoryPanel: React.FC<DirectoryPanelProps> = () => {
     handleSelectNode(node.id)
   }, [handleSelectNode])
 
-  const handleCreateChild = useCallback(async (parentId: string, type: 'folder' | 'note') => {
+  const handleCreateChild = useCallback(async (parentId: string, type: 'folder' | 'note' | 'webNote') => {
     if (type === 'folder') {
       await handleCreateFolder(parentId)
-    } else {
+    } else if (type === 'note') {
       await handleCreateNote(parentId)
+    } else if (type === 'webNote') {
+      await handleCreateWebNote(parentId)
     }
-  }, [handleCreateFolder, handleCreateNote])
+  }, [handleCreateFolder, handleCreateNote, handleCreateWebNote])
 
   const handleRename = useCallback(async (id: string, newTitle: string) => {
     await handleRenameNode(id, newTitle)
@@ -51,6 +54,11 @@ const DirectoryPanel: React.FC<DirectoryPanelProps> = () => {
     await handleCreateNote('root')
     setShowCreateMenu(false)
   }, [handleCreateNote])
+
+  const handleCreateRootWebNote = useCallback(async () => {
+    await handleCreateWebNote('root')
+    setShowCreateMenu(false)
+  }, [handleCreateWebNote])
 
   return (
     <section className="w-80 bg-gray-800 border-r border-gray-600 p-2 space-y-2">
@@ -87,6 +95,13 @@ const DirectoryPanel: React.FC<DirectoryPanelProps> = () => {
                 >
                   <FileText size={14} className="mr-2" />
                   New Note
+                </button>
+                <button
+                  onClick={handleCreateRootWebNote}
+                  className="w-full px-3 py-1 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center"
+                >
+                  <Globe size={14} className="mr-2" />
+                  New Web Note
                 </button>
               </div>
             )}

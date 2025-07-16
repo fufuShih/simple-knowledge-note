@@ -5,6 +5,7 @@ export type {
   BaseNodeData,
   FolderNodeData, 
   NoteNodeData, 
+  WebNoteNodeData,
   NodeData, 
   NodeTreeItem, 
   NodeOperations, 

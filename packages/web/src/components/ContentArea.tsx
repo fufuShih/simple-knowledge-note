@@ -9,7 +9,8 @@ import { Editor, EditorContainer } from "@/components/ui/editor";
 import { FixedToolbar } from '@/components/ui/fixed-toolbar';
 import { MarkToolbarButton } from '@/components/ui/mark-toolbar-button';
 import { useNodeContext, useNodeOperations } from './nodes';
-import type { NoteNodeData, FolderNodeData, NodeData } from './nodes';
+import type { NoteNodeData, FolderNodeData, WebNoteNodeData, NodeData } from './nodes';
+import WebNote from './nodes/WebNote';
 import { 
   Folder, 
   FolderOpen, 
@@ -19,7 +20,8 @@ import {
   Hash,
   Plus,
   Grid3X3,
-  List
+  List,
+  Globe
 } from 'lucide-react';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -37,7 +39,7 @@ interface ContentAreaProps {}
 
 const ContentArea: React.FC<ContentAreaProps> = () => {
   const { activeNodeId, getNode, getChildren, updateNode } = useNodeContext();
-  const { handleCreateFolder, handleCreateNote, handleSelectNode } = useNodeOperations();
+  const { handleCreateFolder, handleCreateNote, handleCreateWebNote, handleSelectNode } = useNodeOperations();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState<Value>(defaultValue);
   const [isEditing, setIsEditing] = useState(false);
@@ -47,6 +49,7 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
   const activeNode = activeNodeId ? getNode(activeNodeId) : null;
   const isNote = activeNode?.type === 'note';
   const isFolder = activeNode?.type === 'folder';
+  const isWebNote = activeNode?.type === 'webNote';
 
   const editor = usePlateEditor({
     plugins: [BoldPlugin, ItalicPlugin, UnderlinePlugin],
@@ -63,6 +66,11 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
       setTitle(noteNode.title);
       setContent(noteNode.content || defaultValue);
       setIsEditing(false);
+    } else if (activeNode && isWebNote) {
+      const webNoteNode = activeNode as WebNoteNodeData;
+      setTitle(webNoteNode.title);
+      setContent(webNoteNode.notes || defaultValue);
+      setIsEditing(false);
     } else if (activeNode && activeNode.type === 'folder') {
       setTitle(activeNode.title);
       setContent(defaultValue);
@@ -72,22 +80,29 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
       setContent(defaultValue);
       setIsEditing(false);
     }
-  }, [activeNode, isNote]);
+  }, [activeNode, isNote, isWebNote]);
 
   const handleSave = useCallback(async () => {
-    if (!activeNode || !isNote || !isEditing) return;
+    if (!activeNode || (!isNote && !isWebNote) || !isEditing) return;
 
     try {
-      await updateNode(activeNodeId!, {
-        title,
-        content,
-      });
+      if (isNote) {
+        await updateNode(activeNodeId!, {
+          title,
+          content,
+        });
+      } else if (isWebNote) {
+        await updateNode(activeNodeId!, {
+          title,
+          notes: content,
+        });
+      }
       setIsEditing(false);
       setLastSaved(new Date());
     } catch (error) {
       console.error('Failed to save node:', error);
     }
-  }, [activeNode, isNote, isEditing, activeNodeId, title, content, updateNode]);
+  }, [activeNode, isNote, isWebNote, isEditing, activeNodeId, title, content, updateNode]);
 
   const handleTitleChange = useCallback((newTitle: string) => {
     setTitle(newTitle);
@@ -101,15 +116,17 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
     }
   }, [handleSave]);
 
-  const handleCreateChild = useCallback(async (type: 'folder' | 'note') => {
+  const handleCreateChild = useCallback(async (type: 'folder' | 'note' | 'webNote') => {
     if (!activeNode || !isFolder) return;
     
     if (type === 'folder') {
       await handleCreateFolder(activeNodeId);
-    } else {
+    } else if (type === 'note') {
       await handleCreateNote(activeNodeId);
+    } else if (type === 'webNote') {
+      await handleCreateWebNote(activeNodeId);
     }
-  }, [activeNode, isFolder, activeNodeId, handleCreateFolder, handleCreateNote]);
+  }, [activeNode, isFolder, activeNodeId, handleCreateFolder, handleCreateNote, handleCreateWebNote]);
 
   const handleChildClick = useCallback((child: NodeData) => {
     handleSelectNode(child.id);
@@ -120,11 +137,13 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
   };
 
   const getNodeIcon = (node: NodeData) => {
-    return node.type === 'folder' ? (
-      <Folder className="w-8 h-8 text-blue-500" />
-    ) : (
-      <FileText className="w-8 h-8 text-green-500" />
-    );
+    if (node.type === 'folder') {
+      return <Folder className="w-8 h-8 text-blue-500" />;
+    } else if (node.type === 'webNote') {
+      return <Globe className="w-8 h-8 text-purple-500" />;
+    } else {
+      return <FileText className="w-8 h-8 text-green-500" />;
+    }
   };
 
   useEffect(() => {
@@ -163,7 +182,7 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
             onKeyDown={handleKeyDown}
             className="w-full text-2xl font-bold bg-transparent border-none outline-none focus:ring-0 p-0"
             placeholder="Enter document title..."
-            disabled={!isNote}
+            disabled={!isNote && !isWebNote}
           />
         </div>
         <div className="flex items-center space-x-2">
@@ -199,9 +218,16 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
                 <Plus size={14} className="mr-1" />
                 Note
               </button>
+              <button
+                onClick={() => handleCreateChild('webNote')}
+                className="px-3 py-1 bg-purple-500 text-white rounded text-sm hover:bg-purple-600 flex items-center"
+              >
+                <Plus size={14} className="mr-1" />
+                Web Note
+              </button>
             </>
           )}
-          {isNote && (
+          {(isNote || isWebNote) && (
             <>
               {isEditing && (
                 <button
@@ -240,6 +266,23 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
             </EditorContainer>
           </Plate>
         </div>
+      ) : isWebNote ? (
+        /* WebNote Area */
+        <WebNote
+          node={activeNode as WebNoteNodeData}
+          onUpdate={(updates) => {
+            if (updates.notes) {
+              setContent(updates.notes);
+            }
+            if (updates.title) {
+              setTitle(updates.title);
+            }
+            setIsEditing(true);
+          }}
+          onSave={handleSave}
+          isEditing={isEditing}
+          lastSaved={lastSaved || undefined}
+        />
       ) : (
         /* Folder view */
         <div className="flex-1 overflow-y-auto p-4">
@@ -262,6 +305,13 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
                 >
                   <Plus size={16} className="mr-2" />
                   Add Note
+                </button>
+                <button
+                  onClick={() => handleCreateChild('webNote')}
+                  className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 flex items-center"
+                >
+                  <Plus size={16} className="mr-2" />
+                  Add Web Note
                 </button>
               </div>
             </div>
@@ -327,6 +377,12 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
                               Note
                             </div>
                           )}
+                          {child.type === 'webNote' && (
+                            <div className="flex items-center justify-center">
+                              <Globe className="w-3 h-3 mr-1" />
+                              Web Note
+                            </div>
+                          )}
                         </div>
                       </>
                     ) : (
@@ -351,6 +407,12 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
                               <span className="flex items-center">
                                 <FileText className="w-3 h-3 mr-1" />
                                 Note
+                              </span>
+                            )}
+                            {child.type === 'webNote' && (
+                              <span className="flex items-center">
+                                <Globe className="w-3 h-3 mr-1" />
+                                Web Note
                               </span>
                             )}
                           </div>

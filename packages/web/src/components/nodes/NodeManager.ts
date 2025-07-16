@@ -1,4 +1,4 @@
-import type { NodeData, FolderNodeData, NoteNodeData, NodeTreeItem, NodeOperations } from './types';
+import type { NodeData, FolderNodeData, NoteNodeData, WebNoteNodeData, NodeTreeItem, NodeOperations } from './types';
 
 export class NodeManager implements NodeOperations {
   private nodes: Map<string, NodeData> = new Map();
@@ -121,7 +121,7 @@ export class NodeManager implements NodeOperations {
     return () => this.subscribers.delete(callback);
   }
 
-  async createNode(type: 'folder' | 'note', title: string, parentId?: string): Promise<string> {
+  async createNode(type: 'folder' | 'note' | 'webNote', title: string, parentId?: string, additionalData?: any): Promise<string> {
     const id = this.generateId();
     const now = new Date();
 
@@ -143,7 +143,7 @@ export class NodeManager implements NodeOperations {
         children: [],
         expanded: true,
       } as FolderNodeData;
-    } else {
+    } else if (type === 'note') {
       newNode = {
         ...baseData,
         type: 'note',
@@ -159,6 +159,26 @@ export class NodeManager implements NodeOperations {
         ],
         tags: [],
       } as NoteNodeData;
+    } else if (type === 'webNote') {
+      newNode = {
+        ...baseData,
+        type: 'webNote',
+        url: additionalData?.url || 'https://example.com',
+        notes: [
+          {
+            type: 'h1',
+            children: [{ text: title }],
+          },
+          {
+            type: 'p',
+            children: [{ text: 'Add your notes here...' }],
+          },
+        ],
+        showNotes: false,
+        tags: [],
+      } as WebNoteNodeData;
+    } else {
+      throw new Error(`Unknown node type: ${type}`);
     }
 
     this.nodes.set(id, newNode);

@@ -5,6 +5,7 @@ import {
   Folder, 
   FolderOpen, 
   FileText, 
+  Globe,
   Plus, 
   Edit3, 
   Trash2, 
@@ -90,6 +91,11 @@ export const NodeItem: React.FC<NodeItemProps> = ({
     setShowContextMenu(false);
   }, [node.id, onCreateChild]);
 
+  const handleCreateWebNote = useCallback(() => {
+    onCreateChild(node.id, 'webNote');
+    setShowContextMenu(false);
+  }, [node.id, onCreateChild]);
+
   const handleDeleteNode = useCallback(() => {
     onDelete(node.id);
     setShowContextMenu(false);
@@ -98,6 +104,8 @@ export const NodeItem: React.FC<NodeItemProps> = ({
   const getNodeIcon = () => {
     if (node.type === 'folder') {
       return node.expanded ? <FolderOpen size={16} /> : <Folder size={16} />;
+    } else if (node.type === 'webNote') {
+      return <Globe size={16} />;
     }
     return <FileText size={16} />;
   };
@@ -202,6 +210,13 @@ export const NodeItem: React.FC<NodeItemProps> = ({
               >
                 <FileText size={14} className="mr-2" />
                 New Note
+              </button>
+              <button
+                onClick={handleCreateWebNote}
+                className="w-full px-3 py-1 text-left text-sm text-gray-300 hover:bg-gray-700 flex items-center"
+              >
+                <Globe size={14} className="mr-2" />
+                New Web Note
               </button>
               <hr className="my-1 border-gray-600" />
             </>

@@ -21,6 +21,12 @@ export const useNodeOperations = () => {
     return noteId;
   }, [createNode, setActiveNodeId]);
 
+  const handleCreateWebNote = useCallback(async (parentId?: string, title: string = 'New Web Note', url: string = 'https://example.com') => {
+    const webNoteId = await createNode('webNote', title, parentId, { url });
+    setActiveNodeId(webNoteId);
+    return webNoteId;
+  }, [createNode, setActiveNodeId]);
+
   const handleRenameNode = useCallback(async (id: string, newTitle: string) => {
     if (newTitle.trim()) {
       await updateNode(id, { title: newTitle.trim() });
@@ -45,6 +51,7 @@ export const useNodeOperations = () => {
   return {
     handleCreateFolder,
     handleCreateNote,
+    handleCreateWebNote,
     handleRenameNode,
     handleDeleteNode,
     handleMoveNode,
