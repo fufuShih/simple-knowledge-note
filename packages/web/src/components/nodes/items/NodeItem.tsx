@@ -1,5 +1,5 @@
 import React from 'react';
-import type { NodeComponentProps } from './types';
+import type { NodeComponentProps } from '../types';
 import { FolderNodeItem } from './FolderNodeItem';
 import { NoteNodeItem } from './NoteNodeItem';
 import { WebNoteNodeItem } from './WebNoteNodeItem';

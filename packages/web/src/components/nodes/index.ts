@@ -14,11 +14,11 @@ export type {
 } from './types';
 
 // Component exports
-export { NodeItem } from './NodeItem';
-export { BaseNodeItem } from './BaseNodeItem';
-export { FolderNodeItem } from './FolderNodeItem';
-export { NoteNodeItem } from './NoteNodeItem';
-export { WebNoteNodeItem } from './WebNoteNodeItem';
+export { NodeItem } from './items/NodeItem';
+export { BaseNodeItem } from './items/BaseNodeItem';
+export { FolderNodeItem } from './items/FolderNodeItem';
+export { NoteNodeItem } from './items/NoteNodeItem';
+export { WebNoteNodeItem } from './items/WebNoteNodeItem';
 
 // Hook exports
 export { useNodeOperations } from './hooks/useNodeOperations';

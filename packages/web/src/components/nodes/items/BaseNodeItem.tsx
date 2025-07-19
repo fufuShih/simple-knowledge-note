@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Edit3, Trash2 } from 'lucide-react';
-import type { NodeComponentProps } from './types';
+import type { NodeComponentProps } from '../types';
 
 export interface BaseNodeItemProps extends Omit<NodeComponentProps, 'onCreateChild' | 'onMove'> {
   isActive?: boolean;

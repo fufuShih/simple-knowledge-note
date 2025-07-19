@@ -12,7 +12,7 @@ import {
 import { BaseNodeItem } from './BaseNodeItem';
 import type { BaseNodeItemProps } from './BaseNodeItem';
 import { NodeItem } from './NodeItem';
-import { useNodeContext } from './NodeContext';
+import { useNodeContext } from '../NodeContext';
 
 interface FolderNodeItemProps extends Omit<BaseNodeItemProps, 'icon' | 'expandButton' | 'actionButtons' | 'contextMenuItems' | 'children'> {
 }
