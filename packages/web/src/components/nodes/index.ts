@@ -15,6 +15,10 @@ export type {
 
 // Component exports
 export { NodeItem } from './NodeItem';
+export { BaseNodeItem } from './BaseNodeItem';
+export { FolderNodeItem } from './FolderNodeItem';
+export { NoteNodeItem } from './NoteNodeItem';
+export { WebNoteNodeItem } from './WebNoteNodeItem';
 
 // Hook exports
 export { useNodeOperations } from './hooks/useNodeOperations';

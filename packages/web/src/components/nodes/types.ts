@@ -63,8 +63,8 @@ export interface NodeContextValue extends NodeOperations {
 export interface NodeComponentProps {
   node: NodeTreeItem;
   onSelect: (node: NodeTreeItem) => void;
-  onCreateChild: (parentId: string, type: 'folder' | 'note' | 'webNote') => void;
+  onCreateChild?: (parentId: string, type: 'folder' | 'note' | 'webNote') => void;
   onDelete: (id: string) => void;
   onRename: (id: string, newTitle: string) => void;
-  onMove: (nodeId: string, newParentId?: string) => void;
+  onMove?: (nodeId: string, newParentId?: string) => void;
 } 
