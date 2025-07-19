@@ -12,8 +12,7 @@ import { useNodeContext, useNodeOperations } from './nodes';
 import type { NoteNodeData, FolderNodeData, WebNoteNodeData, NodeData } from './nodes';
 import WebNote from './nodes/WebNote';
 import { 
-  Folder, 
-  FolderOpen, 
+  Folder,
   FileText, 
   Calendar, 
   Clock, 
@@ -172,9 +171,8 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
 
   return (
     <section className="flex-1 bg-white h-full flex flex-col">
-      {/* Header with title, properties, and controls */}
+      {/* Header section */}
       <div className="border-b border-gray-200 p-4 space-y-3">
-        {/* Row 1: Title Input */}
         <div>
           <input
             type="text"
@@ -187,7 +185,6 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
           />
         </div>
 
-        {/* Row 2: Properties Info */}
         <div className="flex items-center space-x-6 text-sm text-gray-600">
           {isNote && (
             <>
@@ -250,7 +247,6 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
           )}
         </div>
 
-        {/* Row 3: Action Buttons */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             {isFolder && (
@@ -359,144 +355,88 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
       ) : (
         /* Folder view */
         <div className="flex-1 overflow-y-auto p-4">
-          {children.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-gray-500">
-              <FolderOpen className="w-16 h-16 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Empty Folder</h3>
-              <p className="text-center mb-4">This folder doesn't contain any items yet.</p>
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => handleCreateChild('folder')}
-                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 flex items-center"
-                >
-                  <Plus size={16} className="mr-2" />
-                  Add Folder
-                </button>
-                <button
-                  onClick={() => handleCreateChild('note')}
-                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 flex items-center"
-                >
-                  <Plus size={16} className="mr-2" />
-                  Add Note
-                </button>
-                <button
-                  onClick={() => handleCreateChild('webNote')}
-                  className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 flex items-center"
-                >
-                  <Plus size={16} className="mr-2" />
-                  Add Web Note
-                </button>
+          <div className={
+            viewMode === 'grid' 
+              ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'
+              : 'space-y-2'
+          }>
+            {children.map((child) => (
+              <div
+                key={child.id}
+                onClick={() => handleChildClick(child)}
+                className={`
+                  cursor-pointer border rounded-lg p-4 transition-all duration-200 hover:shadow-md hover:border-blue-300
+                  ${viewMode === 'grid' ? 'text-center' : 'flex items-center space-x-3'}
+                `}
+              >
+                {viewMode === 'grid' ? (
+                  <>
+                    <div className="mb-3 flex justify-center">
+                      {getNodeIcon(child)}
+                    </div>
+                    <h4 className="font-medium text-gray-900 mb-2 truncate">{child.title}</h4>
+                    <div className="text-xs text-gray-500 space-y-1">
+                      <div className="flex items-center justify-center">
+                        <Clock className="w-3 h-3 mr-1" />
+                        {formatDateLocal(child.updatedAt)}
+                      </div>
+                      {child.type === 'folder' && (
+                        <div className="flex items-center justify-center">
+                          <Hash className="w-3 h-3 mr-1" />
+                          {(child as FolderNodeData).children.length} items
+                        </div>
+                      )}
+                      {child.type === 'note' && (
+                        <div className="flex items-center justify-center">
+                          <FileText className="w-3 h-3 mr-1" />
+                          Note
+                        </div>
+                      )}
+                      {child.type === 'webNote' && (
+                        <div className="flex items-center justify-center">
+                          <Globe className="w-3 h-3 mr-1" />
+                          Web Note
+                        </div>
+                      )}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex-shrink-0">
+                      {getNodeIcon(child)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-medium text-gray-900 truncate">{child.title}</h4>
+                      <div className="text-sm text-gray-500 flex items-center space-x-4">
+                        <span className="flex items-center">
+                          <Clock className="w-3 h-3 mr-1" />
+                          {formatDateLocal(child.updatedAt)}
+                        </span>
+                        {child.type === 'folder' && (
+                          <span className="flex items-center">
+                            <Hash className="w-3 h-3 mr-1" />
+                            {(child as FolderNodeData).children.length} items
+                          </span>
+                        )}
+                        {child.type === 'note' && (
+                          <span className="flex items-center">
+                            <FileText className="w-3 h-3 mr-1" />
+                            Note
+                          </span>
+                        )}
+                        {child.type === 'webNote' && (
+                          <span className="flex items-center">
+                            <Globe className="w-3 h-3 mr-1" />
+                            Web Note
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
-            </div>
-          ) : (
-            <>
-              {/* Folder info */}
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center mb-2">
-                  <FolderOpen className="w-6 h-6 text-blue-500 mr-2" />
-                  <h3 className="text-lg font-semibold">{title}</h3>
-                </div>
-                <div className="flex items-center text-sm text-gray-600 space-x-4">
-                  <span className="flex items-center">
-                    <Hash className="w-4 h-4 mr-1" />
-                    {children.length} items
-                  </span>
-                  <span className="flex items-center">
-                    <Calendar className="w-4 h-4 mr-1" />
-                    Created: {formatDateLocal(activeNode.createdAt)}
-                  </span>
-                  <span className="flex items-center">
-                    <Clock className="w-4 h-4 mr-1" />
-                    Modified: {formatDateLocal(activeNode.updatedAt)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Children grid/list */}
-              <div className={
-                viewMode === 'grid' 
-                  ? 'grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4'
-                  : 'space-y-2'
-              }>
-                {children.map((child) => (
-                  <div
-                    key={child.id}
-                    onClick={() => handleChildClick(child)}
-                    className={`
-                      cursor-pointer border rounded-lg p-4 transition-all duration-200 hover:shadow-md hover:border-blue-300
-                      ${viewMode === 'grid' ? 'text-center' : 'flex items-center space-x-3'}
-                    `}
-                  >
-                    {viewMode === 'grid' ? (
-                      <>
-                        <div className="mb-3 flex justify-center">
-                          {getNodeIcon(child)}
-                        </div>
-                        <h4 className="font-medium text-gray-900 mb-2 truncate">{child.title}</h4>
-                        <div className="text-xs text-gray-500 space-y-1">
-                          <div className="flex items-center justify-center">
-                            <Clock className="w-3 h-3 mr-1" />
-                            {formatDateLocal(child.updatedAt)}
-                          </div>
-                          {child.type === 'folder' && (
-                            <div className="flex items-center justify-center">
-                              <Hash className="w-3 h-3 mr-1" />
-                              {(child as FolderNodeData).children.length} items
-                            </div>
-                          )}
-                          {child.type === 'note' && (
-                            <div className="flex items-center justify-center">
-                              <FileText className="w-3 h-3 mr-1" />
-                              Note
-                            </div>
-                          )}
-                          {child.type === 'webNote' && (
-                            <div className="flex items-center justify-center">
-                              <Globe className="w-3 h-3 mr-1" />
-                              Web Note
-                            </div>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex-shrink-0">
-                          {getNodeIcon(child)}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-gray-900 truncate">{child.title}</h4>
-                          <div className="text-sm text-gray-500 flex items-center space-x-4">
-                            <span className="flex items-center">
-                              <Clock className="w-3 h-3 mr-1" />
-                              {formatDateLocal(child.updatedAt)}
-                            </span>
-                            {child.type === 'folder' && (
-                              <span className="flex items-center">
-                                <Hash className="w-3 h-3 mr-1" />
-                                {(child as FolderNodeData).children.length} items
-                              </span>
-                            )}
-                            {child.type === 'note' && (
-                              <span className="flex items-center">
-                                <FileText className="w-3 h-3 mr-1" />
-                                Note
-                              </span>
-                            )}
-                            {child.type === 'webNote' && (
-                              <span className="flex items-center">
-                                <Globe className="w-3 h-3 mr-1" />
-                                Web Note
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
+            ))}
+          </div>
         </div>
       )}
     </section>
