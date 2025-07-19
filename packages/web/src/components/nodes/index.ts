@@ -8,9 +8,7 @@ export type {
   WebNoteNodeData,
   NodeData, 
   NodeTreeItem, 
-  NodeOperations, 
-  NodeContextValue, 
-  NodeComponentProps 
+  NodeComponentProps,
 } from './types';
 
 // Component exports

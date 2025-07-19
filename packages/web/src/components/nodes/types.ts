@@ -52,14 +52,6 @@ export interface NodeOperations {
   getTree: () => NodeTreeItem[];
 }
 
-export interface NodeContextValue extends NodeOperations {
-  nodes: Map<string, NodeData>;
-  activeNodeId?: string;
-  setActiveNodeId: (id: string | undefined) => void;
-  refreshTree: () => void;
-  toggleFolderExpanded: (id: string) => void;
-}
-
 export interface NodeComponentProps {
   node: NodeTreeItem;
   onSelect: (node: NodeTreeItem) => void;

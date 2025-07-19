@@ -1,6 +1,16 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import type { NodeContextValue, NodeData } from './types';
+import type { NodeData, NodeOperations } from './types';
 import { NodeManager } from './NodeManager';
+
+
+
+interface NodeContextValue extends NodeOperations {
+  nodes: Map<string, NodeData>;
+  activeNodeId?: string;
+  setActiveNodeId: (id: string | undefined) => void;
+  refreshTree: () => void;
+  toggleFolderExpanded: (id: string) => void;
+}
 
 const NodeContext = createContext<NodeContextValue | undefined>(undefined);
 
