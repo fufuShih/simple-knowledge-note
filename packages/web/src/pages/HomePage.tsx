@@ -1,7 +1,7 @@
 import Sidebar from '../components/Sidebar'
 import DirectoryPanel from '../components/DirectoryPanel'
 import ContentArea from '../components/ContentArea'
-import PropertiesPanel from '../components/PropertiesPanel'
+import SecondaryPanel from '../components/SecondaryPanel'
 
 interface HomePageProps {
   title?: string
@@ -20,7 +20,7 @@ const HomePage: React.FC<HomePageProps> = () => {
       <ContentArea />
 
       {/* Properties Panel */}
-      <PropertiesPanel />
+      <SecondaryPanel />
     </div>
   )
 }

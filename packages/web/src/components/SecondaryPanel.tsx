@@ -6,7 +6,7 @@ import { formatDate, getNodeStats, estimateReadingTime } from "./nodes/utils/nod
 
 interface PropertiesPanelProps {}
 
-const PropertiesPanel: React.FC<PropertiesPanelProps> = () => {
+const SecondaryPanel: React.FC<PropertiesPanelProps> = () => {
   const { activeNodeId, getNode, getChildren } = useNodeContext()
   const activeNode = activeNodeId ? getNode(activeNodeId) : null
   
@@ -162,4 +162,4 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = () => {
     )
 }
 
-export default PropertiesPanel
+export default SecondaryPanel

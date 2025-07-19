@@ -172,9 +172,10 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
 
   return (
     <section className="flex-1 bg-white h-full flex flex-col">
-      {/* Header with title and controls */}
-      <div className="border-b border-gray-200 p-4 flex items-center justify-between">
-        <div className="flex-1">
+      {/* Header with title, properties, and controls */}
+      <div className="border-b border-gray-200 p-4 space-y-3">
+        {/* Row 1: Title Input */}
+        <div>
           <input
             type="text"
             value={title}
@@ -185,10 +186,111 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
             disabled={!isNote && !isWebNote}
           />
         </div>
-        <div className="flex items-center space-x-2">
+
+        {/* Row 2: Properties Info */}
+        <div className="flex items-center space-x-6 text-sm text-gray-600">
+          {isNote && (
+            <>
+              <span className="flex items-center">
+                <FileText className="w-4 h-4 mr-1" />
+                Note
+              </span>
+              <span className="flex items-center">
+                <Calendar className="w-4 h-4 mr-1" />
+                {formatDateLocal(activeNode.createdAt)}
+              </span>
+              <span className="flex items-center">
+                <Clock className="w-4 h-4 mr-1" />
+                {formatDateLocal(activeNode.updatedAt)}
+              </span>
+            </>
+          )}
+          {isWebNote && (
+            <>
+              <span className="flex items-center">
+                <Globe className="w-4 h-4 mr-1" />
+                Web Note
+              </span>
+              {(activeNode as WebNoteNodeData).url && (
+                <span className="flex items-center">
+                  <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                    {(activeNode as WebNoteNodeData).url}
+                  </span>
+                </span>
+              )}
+              <span className="flex items-center">
+                <Calendar className="w-4 h-4 mr-1" />
+                {formatDateLocal(activeNode.createdAt)}
+              </span>
+              <span className="flex items-center">
+                <Clock className="w-4 h-4 mr-1" />
+                {formatDateLocal(activeNode.updatedAt)}
+              </span>
+            </>
+          )}
           {isFolder && (
             <>
-              <div className="flex items-center space-x-1 mr-4">
+              <span className="flex items-center">
+                <Folder className="w-4 h-4 mr-1" />
+                Folder
+              </span>
+              <span className="flex items-center">
+                <Hash className="w-4 h-4 mr-1" />
+                {children.length} items
+              </span>
+              <span className="flex items-center">
+                <Calendar className="w-4 h-4 mr-1" />
+                {formatDateLocal(activeNode.createdAt)}
+              </span>
+              <span className="flex items-center">
+                <Clock className="w-4 h-4 mr-1" />
+                {formatDateLocal(activeNode.updatedAt)}
+              </span>
+            </>
+          )}
+        </div>
+
+        {/* Row 3: Action Buttons */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            {isFolder && (
+              <>
+                <button
+                  onClick={() => handleCreateChild('folder')}
+                  className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 flex items-center"
+                >
+                  <Plus size={14} className="mr-1" />
+                  Folder
+                </button>
+                <button
+                  onClick={() => handleCreateChild('note')}
+                  className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600 flex items-center"
+                >
+                  <Plus size={14} className="mr-1" />
+                  Note
+                </button>
+                <button
+                  onClick={() => handleCreateChild('webNote')}
+                  className="px-3 py-1 bg-purple-500 text-white rounded text-sm hover:bg-purple-600 flex items-center"
+                >
+                  <Plus size={14} className="mr-1" />
+                  Web Note
+                </button>
+              </>
+            )}
+            {(isNote || isWebNote) && isEditing && (
+              <button
+                onClick={handleSave}
+                className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+              >
+                Save
+              </button>
+            )}
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            {isFolder && (
+              <div className="flex items-center space-x-1">
                 <button
                   onClick={() => setViewMode('grid')}
                   className={`p-2 rounded ${viewMode === 'grid' ? 'bg-blue-100 text-blue-600' : 'hover:bg-gray-100'}`}
@@ -204,51 +306,22 @@ const ContentArea: React.FC<ContentAreaProps> = () => {
                   <List size={16} />
                 </button>
               </div>
-              <button
-                onClick={() => handleCreateChild('folder')}
-                className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600 flex items-center"
-              >
-                <Plus size={14} className="mr-1" />
-                Folder
-              </button>
-              <button
-                onClick={() => handleCreateChild('note')}
-                className="px-3 py-1 bg-green-500 text-white rounded text-sm hover:bg-green-600 flex items-center"
-              >
-                <Plus size={14} className="mr-1" />
-                Note
-              </button>
-              <button
-                onClick={() => handleCreateChild('webNote')}
-                className="px-3 py-1 bg-purple-500 text-white rounded text-sm hover:bg-purple-600 flex items-center"
-              >
-                <Plus size={14} className="mr-1" />
-                Web Note
-              </button>
-            </>
-          )}
-          {(isNote || isWebNote) && (
-            <>
-              {isEditing && (
-                <button
-                  onClick={handleSave}
-                  className="px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
-                >
-                  Save
-                </button>
-              )}
-              {lastSaved && (
-                <span className="text-sm text-gray-500">
-                  Saved at {lastSaved.toLocaleTimeString()}
-                </span>
-              )}
-              {isEditing && (
-                <span className="text-sm text-orange-500">
-                  Unsaved changes
-                </span>
-              )}
-            </>
-          )}
+            )}
+            {(isNote || isWebNote) && (
+              <div className="flex items-center space-x-3">
+                {lastSaved && (
+                  <span className="text-sm text-gray-500">
+                    Saved at {lastSaved.toLocaleTimeString()}
+                  </span>
+                )}
+                {isEditing && (
+                  <span className="text-sm text-orange-500">
+                    Unsaved changes
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
